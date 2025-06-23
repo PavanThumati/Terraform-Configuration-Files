@@ -84,7 +84,7 @@ resource "aws_ecr_repository" "backend"  { name = "backend-image" }
 
 
 resource "aws_iam_role" "eks_cluster_role" {
-  name = "EKSClusterRole"
+  name = "EKSClusterRoleTerraform"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -118,7 +118,7 @@ resource "aws_eks_cluster" "cluster" {
   depends_on = [aws_iam_role.eks_cluster_role]
 }
 resource "aws_iam_role" "eks_node_role" {
-  name = "EKSNodeGroupRole"
+  name = "EKSNodeGroupRoleTerraform"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
