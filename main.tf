@@ -16,7 +16,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = { Name = "three-tier-vpc" }
+  tags                 = { Name = "three-tier-vpc" }
 }
 resource "aws_internet_gateway" "igw" { vpc_id = aws_vpc.main.id }
 resource "aws_eip" "nat" { domain = "vpc" }
@@ -31,28 +31,28 @@ resource "aws_subnet" "public" {
   availability_zone       = data.aws_availability_zones.az.names[count.index]
   map_public_ip_on_launch = true
   tags = {
-    Name                                   = "PublicSubnet${count.index+1}"
-    "kubernetes.io/role/elb"              = "1"
+    Name                                       = "PublicSubnet${count.index + 1}"
+    "kubernetes.io/role/elb"                   = "1"
     "kubernetes.io/cluster/three-tier-cluster" = "shared"
   }
 }
 resource "aws_subnet" "private" {
   count             = 2
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index+2)
+  cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index + 2)
   availability_zone = data.aws_availability_zones.az.names[count.index]
   tags = {
-    Name                                   = "PrivateSubnet${count.index+1}"
-    "kubernetes.io/role/internal-elb"     = "1"
+    Name                                       = "PrivateSubnet${count.index + 1}"
+    "kubernetes.io/role/internal-elb"          = "1"
     "kubernetes.io/cluster/three-tier-cluster" = "shared"
   }
 }
 # Route tables
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
-  route { 
+  route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id 
+    gateway_id = aws_internet_gateway.igw.id
   }
 }
 resource "aws_route_table_association" "public" {
@@ -62,9 +62,9 @@ resource "aws_route_table_association" "public" {
 }
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-  route { 
-    cidr_block = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id 
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
   }
 }
 resource "aws_route_table_association" "private" {
@@ -80,7 +80,7 @@ resource "aws_s3_bucket" "artifact" {
 resource "random_id" "rand" { byte_length = 4 }
 
 resource "aws_ecr_repository" "frontend" { name = "frontend-image" }
-resource "aws_ecr_repository" "backend"  { name = "backend-image" }
+resource "aws_ecr_repository" "backend" { name = "backend-image" }
 
 
 resource "aws_iam_role" "eks_cluster_role" {
@@ -88,9 +88,9 @@ resource "aws_iam_role" "eks_cluster_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "eks.amazonaws.com" },
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
   tags = { Name = "three-tier-cluster-role" }
@@ -110,11 +110,11 @@ resource "aws_eks_cluster" "cluster" {
   name     = "three-tier-cluster"
   role_arn = aws_iam_role.eks_cluster_role.arn
   vpc_config {
-    subnet_ids = concat(aws_subnet.public.*.id, aws_subnet.private.*.id)
+    subnet_ids              = concat(aws_subnet.public.*.id, aws_subnet.private.*.id)
     endpoint_public_access  = true
     endpoint_private_access = false
   }
-  tags = { Name = "three-tier-cluster" }
+  tags       = { Name = "three-tier-cluster" }
   depends_on = [aws_iam_role.eks_cluster_role]
 }
 resource "aws_iam_role" "eks_node_role" {
@@ -158,8 +158,8 @@ resource "aws_eks_node_group" "nodes" {
   instance_types = ["t3.medium"]
   ami_type       = "AL2_x86_64"
   disk_size      = 20
-  tags = { Name = "three-tier-nodegroup" }
-  depends_on = [aws_iam_role.eks_node_role]
+  tags           = { Name = "three-tier-nodegroup" }
+  depends_on     = [aws_iam_role.eks_node_role]
 }
 
 
@@ -192,12 +192,12 @@ resource "aws_db_instance" "mysql" {
   publicly_accessible     = false
   multi_az                = false
   backup_retention_period = 1
-  tags = { Name = "three-tier-rds-instance" }
+  tags                    = { Name = "three-tier-rds-instance" }
 }
 
 
 
 
-output "vpc_id"     { value = aws_vpc.main.id }
+output "vpc_id" { value = aws_vpc.main.id }
 output "eks_endpoint" { value = aws_eks_cluster.cluster.endpoint }
 output "rds_endpoint" { value = aws_db_instance.mysql.address }
